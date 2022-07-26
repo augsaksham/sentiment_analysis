@@ -1,7 +1,0 @@
-numpy==1.21.6
-torch==1.12.7
-pandas
-typing-extensions==2.8.0
-tqdm
-sklearn
-transformers==4.20.1 

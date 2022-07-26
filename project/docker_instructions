@@ -1,0 +1,6 @@
+First Download the model from the readme file in the saved_model directory
+
+docker build . -t dev_foundry 
+docker run -d --name dev_curr -p 80:80 dev_foundry
+
+Doc at : http://127.0.0.1/docs
