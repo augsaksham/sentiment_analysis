@@ -1,0 +1,23 @@
+This guides you to host this project on google cloud.
+Note -> This project is currently hosted on google servers
+        and can be acessed at:
+        https://foundry-6nmnvycfcq-uc.a.run.app/docs#/
+
+
+Prerequists:
+A billable GCloud account
+A Google project 
+Admin write acess to cloud bucked
+Google CLI client
+Docker
+Docker image of the project
+
+
+Steps:
+On the cli console:
+
+docker tag <image_name> gcr.io/<google_project_id>/<image_name>
+docker push gcr.io/<google_project_id>/<image_name>
+
+Now follow this: https://cloud.google.com/run/docs/quickstarts/deploy-container
+
