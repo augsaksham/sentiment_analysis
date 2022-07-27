@@ -12,9 +12,16 @@ tokenizer = BertTokenizer.from_pretrained('./saved_model/')
 def __init__(**kwargs):
     pass
 
+#Predict function to get predicted labels form a string
+#It is used bu the main.py to get predictions of the input text
 def predict(text,model_path,device=torch.device('cpu')):
+    #Getting pretarined model
     model_eval=utils.load_model(model_path)
+
+    #Cleaning the text (Removing puntuation ,tags ,emojis etc)
     text=utils.clean_text(text)
+
+    #Padding text to length of 256
     encoded_data_val = tokenizer.batch_encode_plus(
         np.array([text]),
         add_special_tokens=True,
@@ -23,6 +30,8 @@ def predict(text,model_path,device=torch.device('cpu')):
         max_length=256,
         return_tensors='pt'
     )
+
+    #Making test dataloader
     input_ids_val = encoded_data_val['input_ids']
     attention_masks_val = encoded_data_val['attention_mask']
     labels_val = torch.tensor(np.array([1]))
@@ -34,6 +43,8 @@ def predict(text,model_path,device=torch.device('cpu')):
         sampler=RandomSampler(dataset_val),
         batch_size=1
     )
+
+    #Predicting the label
     predictions, true_vals = [], []
     for batch in dataloader_val:
         

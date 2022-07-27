@@ -1,3 +1,6 @@
+#This file trains a Bert for text classification
+#This file is called via command line eg. pythom train.py
+
 from utils import utils
 import torch
 import numpy as np
@@ -11,6 +14,7 @@ def __init__(**kwargs):
     pass
 
 
+#Initializer funtion to set seeds etc
 def initialize():
     seed_val = 17
     random.seed(seed_val)
@@ -19,10 +23,17 @@ def initialize():
     torch.cuda.manual_seed_all(seed_val)
     
 
+#Inputs ->
+# data path :(path so the csv file)
+# epochs :number of epochs to run the model
+# save path :the path to store the trained model
+# device :which device to use {gpu or cpu} default= cpu 
 data = input("Input dataframe path ")
 epoch = input("Input epochs ")
 save_path = input("Input model save path ex -> save_model.pth")
 device = input("Input device 'cpu' or 'gpu' ")
+if device==None:
+    device='cpu'
 device=torch.device(device)
 initialize()
 
@@ -30,21 +41,27 @@ def train_model(data,epochs,save_path,device=torch.device('cpu')):
 
     epochs=int(epochs)
 
+    #Getting model class
     model=utils.get_model()
+
+    #Getting dataloaders
     dataloader_train,dataloader_val =utils.get_data_loader(data)
 
+    #Setting optimizer 
     optimizer = AdamW(
         model.parameters(),
         lr = 1e-5,
         eps = 1e-8
     )
 
+    #Setting scheduler
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
         num_warmup_steps=1,
         num_training_steps = len(dataloader_train)*epochs
     )
 
+    #Main train loop
     for epoch in range(1, epochs+1):
         model.train()
         loss_train_total = 0
@@ -78,6 +95,7 @@ def train_model(data,epochs,save_path,device=torch.device('cpu')):
         val_f1 = utils.f1_score_func(predictions, true_vals)
         
 
+    #Saving the final model
     torch.save(model.state_dict(), save_path)
     print("Saved model")
 

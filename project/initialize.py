@@ -1,3 +1,5 @@
+#This file lodas he model architecture in memory for thwe first 
+#It speeds up the inference time for subsequent model calls 
 from transformers import BertForSequenceClassification
 
 model = BertForSequenceClassification.from_pretrained(

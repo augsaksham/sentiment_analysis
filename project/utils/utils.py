@@ -8,10 +8,6 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import BertTokenizer
 from torch.utils.data import TensorDataset
 from sklearn.model_selection import train_test_split
-
-
-
-
 from transformers import BertForSequenceClassification
 
 
@@ -25,6 +21,8 @@ def get_model():
     return model
 
 ## Text Cleaning Functions ##
+
+#Function to remove @tag from the text
 def remove_tag(text):
     ln=len(text)
     ind=-1
@@ -52,15 +50,17 @@ def remove_tag(text):
         
     return text
 
+#Function to remove URL from the text
 def remove_URL(text):
     url = re.compile(r"https?://\S+|www\.\S+")
     return url.sub(r"", text)
 
-
+#Function to remove HTML from the text
 def remove_html(text):
     html = re.compile(r"<.*?>")
     return html.sub(r"", text)
 
+#Function to remove emoji from the text
 def remove_emojis(text):
     emoj = re.compile("["
         u"\U0001F600-\U0001F64F"  # emoticons
@@ -84,10 +84,12 @@ def remove_emojis(text):
                       "]+", re.UNICODE)
     return re.sub(emoj, '', text)
 
+#Function to remove puntuation from the text
 def remove_punct(text):
     table = str.maketrans("", "", string.punctuation)
     return text.translate(table)
 
+#Combined function calling all the above functions
 def clean_text(text):
     text=remove_tag(text)
     rm_url=remove_URL(text)
@@ -97,6 +99,7 @@ def clean_text(text):
     
     return rm_punch
 
+#Mapping data frame srings to numbers
 def fun_map(x):
     if x.lower()=='positive':
         return 1
@@ -104,8 +107,13 @@ def fun_map(x):
 
 def get_data_loader(df_path):
 
+    #Reading Data
     data_df=pd.read_csv(df_path)
+
+    #Cleaning text in data frame
     data_df['text']=data_df.text.map(lambda x: clean_text(x))
+
+    #Mapping the strings to integers
     data_df['airline_sentiment']=data_df.airline_sentiment.map(lambda x: fun_map(x))
     data_df=data_df.drop('Unnamed: 0',axis=1)
     data_df.reset_index(drop=True)
@@ -115,20 +123,26 @@ def get_data_loader(df_path):
     data_df.set_index('id')
     df=data_df.copy()
     df=df.set_index('id')
+
+    #Splitting the data
     X_train, X_val, y_train, y_val = train_test_split(df.index.values, 
                                                   df.category.values, 
                                                   test_size=0.15, 
                                                   random_state=42,
                                                   stratify=df.category.values)
+
+    #Making train and val partition in the data frame itself                                              
     df['data_type'] = ['not_set']*df.shape[0]
     df.loc[X_train, 'data_type'] = 'train'
     df.loc[X_val, 'data_type'] = 'val'
+
+    #Initializig tokenizer
     tokenizer = BertTokenizer.from_pretrained(
         'bert-base-uncased',
         do_lower_case=True
     )
 
-
+    #Encoding train data
     encoded_data_train = tokenizer.batch_encode_plus(
         df[df.data_type=='train'].text.values,
         add_special_tokens=True,
@@ -138,6 +152,7 @@ def get_data_loader(df_path):
         return_tensors='pt'
     )
 
+    #Encoding val data
     encoded_data_val = tokenizer.batch_encode_plus(
         df[df.data_type=='val'].text.values,
         add_special_tokens=True,
@@ -155,6 +170,7 @@ def get_data_loader(df_path):
     attention_masks_val = encoded_data_val['attention_mask']
     labels_val = torch.tensor(df[df.data_type=='val'].category.values) 
 
+    #Making train and val dataset
     dataset_train = TensorDataset(input_ids_train, 
                               attention_masks_train,
                               labels_train)
@@ -165,6 +181,7 @@ def get_data_loader(df_path):
 
     batch_size = 4
 
+    #Making train and val dataloader
     dataloader_train = DataLoader(
         dataset_train,
         sampler=RandomSampler(dataset_train),
@@ -177,8 +194,14 @@ def get_data_loader(df_path):
         batch_size=32
     )
 
+    #Saving Tokenizer
+    tokenizer.save_pretrained('./saved_model/')
+
+
     return dataloader_train,dataloader_val                                                          
 
+
+#Function to get per class accuracy of prediction
 def accuracy_per_class(preds, labels):
     label_dict={1:'1',0:'0'}
     label_dict_inverse = {v: k for k, v in label_dict.items()}
@@ -192,12 +215,13 @@ def accuracy_per_class(preds, labels):
         print(f'Class: {label_dict_inverse[label]}')
         print(f'Accuracy:{len(y_preds[y_preds==label])}/{len(y_true)}\n')    
 
+#Function to calculate F1 Score
 def f1_score_func(preds, labels):
     preds_flat = np.argmax(preds, axis=1).flatten()
     labels_flat = labels.flatten()
     return f1_score(labels_flat, preds_flat, average = 'weighted')
 
-
+#Function to load a pretarined model to the memory 
 def load_model(path):
     model_eval = get_model()
     model_eval.load_state_dict(torch.load(path,map_location=torch.device('cpu')))

@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 
+
+#Evaluation function used during model trainig (Will be clled automatically)
 def evaluate(dataloader_val,model,device):
 
     model.eval()

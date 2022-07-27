@@ -1,3 +1,4 @@
+#File for defining model architecute 
 from transformers import BertForSequenceClassification
 
 
